@@ -1,10 +1,10 @@
-# Project Title
+# Python REST API for Comment Management
 
 A brief description of your project.
 
 ## Description
 
-More detailed information about your project. Explain what it does and why it is useful.
+This project is a Python-based backend designed to provide RESTful services for managing user comments. It allows clients to perform CRUD (Create, Read, Update, Delete) operations on comments. Future plans include developing a user interface that will consume these backend APIs to provide a seamless user experience.
 
 ## Installation
 
@@ -23,10 +23,13 @@ Explain how to use your project. Provide code examples if applicable.
 
 ```python
 # Example usage
-import your_package
-
-your_package.do_something()
+# import your_package # This can be removed or commented out if not immediately relevant
+# your_package.do_something() # This can be removed or commented out
 ```
+
+**API Endpoints:**
+
+Detailed documentation for the API endpoints, including request/response formats and examples, will be provided here as the project develops. This section will cover how to interact with the CRUD services for comments.
 
 ## Contributing
 
