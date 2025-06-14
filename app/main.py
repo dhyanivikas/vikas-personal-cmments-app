@@ -9,9 +9,9 @@ app = Flask(__name__)
 # The database 'comments_db' and the user should be created in MySQL beforehand.
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'your_user',       # Replace with your MySQL username
-    'password': 'your_password', # Replace with your MySQL password
-    'database': 'comments_db'    # Replace with your database name
+    'user': 'root',       # Replace with your MySQL username
+    'password': 'H1cke$$1nk', # Replace with your MySQL password
+    'database': 'stocks'    # Replace with your database name
 }
 
 # --- Database Helper Functions ---
