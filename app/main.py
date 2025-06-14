@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from datetime import datetime
 import mysql.connector # Import MySQL Connector
+import os
 
 app = Flask(__name__)
 
@@ -31,7 +32,9 @@ def init_db_schema():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        with open('../schema.sql', 'r') as f: # Adjusted path to be relative to app/main.py
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        schema_path = os.path.join(base_dir, '..', 'schema.sql')
+        with open(schema_path, 'r') as f:
             sql_script = f.read()
         
         # Split script into individual statements if necessary,
