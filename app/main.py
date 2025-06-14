@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from datetime import datetime
 import mysql.connector # Import MySQL Connector
+from mysql.connector.cursor import MySQLCursor
+from mysql.connector.connection import MySQLConnection
 import os
 
 app = Flask(__name__)
@@ -26,40 +28,100 @@ def get_db_connection():
         # In a real app, you might raise a custom exception or handle this more robustly
         raise
 
-def init_db_schema():
-    """Initializes the database schema by executing commands from schema.sql."""
+
+import os
+import logging
+from contextlib import closing
+from typing import Optional
+import mysql.connector
+from mysql.connector.cursor import MySQLCursor
+from mysql.connector.connection import MySQLConnection
+
+
+def init_db_schema() -> bool:
+    """
+    Initializes the database schema by executing commands from schema.sql.
+
+    Returns:
+        bool: True if initialization was successful, False otherwise
+    """
+    logging.info("Starting database schema initialization...")
+
+    conn = None
+    cursor = None
+
     try:
+        # Get database connection
         conn = get_db_connection()
         cursor = conn.cursor()
-        
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        schema_path = os.path.join(base_dir, '..', 'schema.sql')
-        with open(schema_path, 'r') as f:
-            sql_script = f.read()
-        
-        # Split script into individual statements if necessary,
-        # though mysql.connector's cursor.execute() can often handle multi-statement scripts
-        # if the connection is configured for it (e.g., multi=True on cursor or using execute_stream).
-        # For simplicity, assuming single statements or that the driver handles it.
-        # A more robust way for multiple statements:
-        for result in cursor.execute(sql_script, multi=True):
-            if result.with_rows:
-                print("Rows produced by statement '{}':".format(result.statement))
-                print(result.fetchall())
-            else:
-                print("Number of rows affected by statement '{}': {}".format(
-                    result.statement, result.rowcount))
 
-        conn.commit()
-        print("Database schema initialized successfully.")
+        # Read schema file
+        schema_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..',
+            'schema.sql'
+        )
+
+        # Validate schema file exists and is readable
+        if not os.path.isfile(schema_path):
+            logging.error("Schema file not found at: %s", schema_path)
+            return False
+
+        # Read and execute schema
+        try:
+            with open(schema_path, 'r', encoding='utf-8') as f:
+                sql_script = f.read()
+
+            # Split the script into individual statements
+            statements = sql_script.split(';')
+
+            # Execute each statement separately
+            for statement in statements:
+                statement = statement.strip()
+                if statement:  # Skip empty statements
+                    cursor.execute(statement)
+                    if cursor.with_rows:
+                        rows = cursor.fetchall()
+                        logging.debug(
+                            "Query '%s' returned %d rows",
+                            statement[:100],  # Truncate long statements in log
+                            len(rows)
+                        )
+                    else:
+                        logging.debug(
+                            "Query '%s' affected %d rows",
+                            statement[:100],  # Truncate long statements in log
+                            cursor.rowcount
+                        )
+
+            # Commit changes
+            conn.commit()
+            logging.info("Database schema initialized successfully")
+            return True
+
+        except IOError as e:
+            logging.error("Failed to read schema file: %s", e)
+            return False
+
     except mysql.connector.Error as err:
-        print(f"Error initializing database schema: {err}")
-    except FileNotFoundError:
-        print("Error: schema.sql not found. Make sure it's in the root directory.")
+        logging.error("Database error during schema initialization: %s", err)
+        if conn:
+            conn.rollback()  # Rollback any partial changes
+        return False
+
+    except Exception as e:
+        logging.error("Unexpected error during schema initialization: %s", e)
+        if conn:
+            conn.rollback()  # Rollback any partial changes
+        return False
+
     finally:
-        if 'conn' in locals() and conn.is_connected():
+        # Clean up resources
+        if cursor:
             cursor.close()
+        if conn:
             conn.close()
+            logging.debug("Database connection closed")
 
 # --- API Endpoints ---
 
