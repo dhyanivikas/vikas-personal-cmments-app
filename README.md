@@ -29,7 +29,13 @@ Explain how to use your project. Provide code examples if applicable.
 
 **API Endpoints:**
 
-Detailed documentation for the API endpoints, including request/response formats and examples, will be provided here as the project develops. This section will cover how to interact with the CRUD services for comments.
+The service exposes the following routes:
+
+* `POST /comments` - create a new comment
+* `GET /comments` - list all comments
+* `GET /comments/<id>` - retrieve a single comment
+* `PUT /comments/<id>` - update an existing comment
+* `DELETE /comments/<id>` - remove a comment
 
 ## Contributing
 

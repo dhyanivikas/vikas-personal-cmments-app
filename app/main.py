@@ -230,6 +230,42 @@ def get_comment(comment_id):
             cursor.close()
             conn.close()
 
+@app.route('/comments/<int:comment_id>', methods=['PUT'])
+def update_comment(comment_id):
+    """Update the text of an existing comment."""
+    data = request.get_json()
+    if not data or not data.get('text'):
+        return jsonify({"error": "Comment text is required"}), 400
+
+    new_text = data.get('text')
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        update_query = "UPDATE comments SET text = %s WHERE id = %s"
+        cursor.execute(update_query, (new_text, comment_id))
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Comment not found"}), 404
+
+        cursor.close()
+        cursor = conn.cursor(dictionary=True)
+        select_query = ("SELECT id, text, DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%SZ') "
+                        "as created_at FROM comments WHERE id = %s")
+        cursor.execute(select_query, (comment_id,))
+        updated = cursor.fetchone()
+        return jsonify(updated), 200
+
+    except mysql.connector.Error as err:
+        print(f"Database error in update_comment: {err}")
+        return jsonify({"error": "Failed to update comment due to database error"}), 500
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
+
 @app.route('/comments/<int:comment_id>', methods=['DELETE'])
 def delete_comment(comment_id):
     """Remove a comment from the database if it exists."""
