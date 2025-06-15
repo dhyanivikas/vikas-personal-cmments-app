@@ -1,6 +1,8 @@
+"""Comment management API built with Flask and MySQL."""
+
 from flask import Flask, request, jsonify
 from datetime import datetime
-import mysql.connector # Import MySQL Connector
+import mysql.connector  # Import MySQL Connector
 from mysql.connector.cursor import MySQLCursor
 from mysql.connector.connection import MySQLConnection
 import os
@@ -18,8 +20,16 @@ DB_CONFIG = {
 
 # --- Database Helper Functions ---
 
-def get_db_connection():
-    """Establishes a connection to the MySQL database."""
+def get_db_connection() -> MySQLConnection:
+    """Create and return a connection to the configured MySQL database.
+
+    Returns:
+        MySQLConnection: Active connection object that should be closed by the
+        caller.
+
+    Raises:
+        mysql.connector.Error: If the connection attempt fails.
+    """
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         return conn
@@ -39,11 +49,15 @@ from mysql.connector.connection import MySQLConnection
 
 
 def init_db_schema() -> bool:
-    """
-    Initializes the database schema by executing commands from schema.sql.
+    """Create database tables defined in ``schema.sql``.
+
+    The function reads SQL statements from the ``schema.sql`` file located at
+    the project root and executes them sequentially. It logs progress and
+    returns a boolean indicating success.
 
     Returns:
-        bool: True if initialization was successful, False otherwise
+        bool: ``True`` when the schema is created successfully, otherwise
+        ``False``.
     """
     logging.info("Starting database schema initialization...")
 
@@ -127,6 +141,12 @@ def init_db_schema() -> bool:
 
 @app.route('/comments', methods=['POST'])
 def create_comment():
+    """Create a new comment and store it in the database.
+
+    The request body must contain a ``text`` field. On success the newly
+    created comment, including its database assigned ``id`` and ISO formatted
+    ``created_at`` timestamp, is returned with status code ``201``.
+    """
     data = request.get_json()
     if not data or not data.get('text'):
         return jsonify({"error": "Comment text is required"}), 400
@@ -163,6 +183,7 @@ def create_comment():
 
 @app.route('/comments', methods=['GET'])
 def get_all_comments():
+    """Return all comments ordered by creation time in descending order."""
     conn = None
     try:
         conn = get_db_connection()
@@ -186,6 +207,7 @@ def get_all_comments():
 
 @app.route('/comments/<int:comment_id>', methods=['GET'])
 def get_comment(comment_id):
+    """Retrieve a single comment by its identifier."""
     conn = None
     try:
         conn = get_db_connection()
@@ -210,6 +232,7 @@ def get_comment(comment_id):
 
 @app.route('/comments/<int:comment_id>', methods=['DELETE'])
 def delete_comment(comment_id):
+    """Remove a comment from the database if it exists."""
     conn = None
     try:
         conn = get_db_connection()
