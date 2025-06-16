@@ -1,13 +1,21 @@
 """Comment management API built with Flask and MySQL."""
 
 from flask import Flask, request, jsonify
+
+from flask import send_from_directory
 from datetime import datetime
 import mysql.connector  # Import MySQL Connector
 from mysql.connector.cursor import MySQLCursor
 from mysql.connector.connection import MySQLConnection
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+
+
+@app.route('/ui')
+def serve_ui():
+    """Serve the frontend user interface."""
+    return app.send_static_file('index.html')
 
 # IMPORTANT: Update with your actual MySQL credentials and database name.
 # The database 'comments_db' and the user should be created in MySQL beforehand.
