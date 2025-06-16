@@ -1,0 +1,45 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#comment-form {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+#comment-form input {
+    flex: 1;
+    padding: 8px;
+    margin-right: 10px;
+}
+
+#comments-list {
+    list-style: none;
+    padding: 0;
+}
+
+.comment-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+.comment-text {
+    flex: 1;
+}
+
+.comment-actions button {
+    margin-left: 5px;
+}

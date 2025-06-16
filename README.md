@@ -4,7 +4,7 @@ A brief description of your project.
 
 ## Description
 
-This project is a Python-based backend designed to provide RESTful services for managing user comments. It allows clients to perform CRUD (Create, Read, Update, Delete) operations on comments. Future plans include developing a user interface that will consume these backend APIs to provide a seamless user experience.
+This project is a Python-based backend designed to provide RESTful services for managing user comments. It allows clients to perform CRUD (Create, Read, Update, Delete) operations on comments. A lightweight web interface is included so you can interact with the API from your browser.
 
 ## Installation
 
@@ -19,7 +19,7 @@ pip install your-package
 
 ## Usage
 
-Explain how to use your project. Provide code examples if applicable.
+Run the Flask application and open [http://localhost:5000/ui](http://localhost:5000/ui) in your browser to access the simple web interface.
 
 ```python
 # Example usage
