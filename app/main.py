@@ -160,26 +160,36 @@ def create_comment():
         return jsonify({"error": "Comment text is required"}), 400
 
     comment_text = data.get('text')
-    created_at_dt = datetime.utcnow()
-    # Format for MySQL DATETIME column
-    created_at_sql_format = created_at_dt.strftime('%Y-%m-%d %H:%M:%S')
 
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        insert_query = "INSERT INTO comments (text, created_at) VALUES (%s, %s)"
-        cursor.execute(insert_query, (comment_text, created_at_sql_format))
+        # `created_at` and `modified_at` will be set by the database
+        insert_query = "INSERT INTO comments (text) VALUES (%s)"
+        cursor.execute(insert_query, (comment_text,))
         new_comment_id = cursor.lastrowid # Get the ID of the newly inserted row
         conn.commit()
+
+        # Fetch the newly created comment to get database-generated timestamps
+        cursor.close() # Close previous cursor
+        cursor = conn.cursor(dictionary=True)
+        select_query = ("SELECT id, text, "
+                        "DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%SZ') as created_at, "
+                        "DATE_FORMAT(modified_at, '%Y-%m-%dT%H:%i:%SZ') as modified_at "
+                        "FROM comments WHERE id = %s")
+        cursor.execute(select_query, (new_comment_id,))
+        new_comment_details = cursor.fetchone()
         
-        new_comment = {
-            "id": new_comment_id,
-            "text": comment_text,
-            "created_at": created_at_dt.isoformat() + 'Z' # ISO 8601 format for response
+        # For the response, only include id, text, and created_at as before
+        # modified_at is not yet shown in the UI/response.
+        response_comment = {
+            "id": new_comment_details["id"],
+            "text": new_comment_details["text"],
+            "created_at": new_comment_details["created_at"]
         }
-        return jsonify(new_comment), 201
+        return jsonify(response_comment), 201
         
     except mysql.connector.Error as err:
         print(f"Database error in create_comment: {err}")
@@ -198,10 +208,20 @@ def get_all_comments():
         # Use dictionary=True for cursor to get results as dictionaries
         cursor = conn.cursor(dictionary=True)
         
-        # Format created_at to ISO 8601 like string in SQL
-        query = "SELECT id, text, DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%SZ') as created_at FROM comments ORDER BY created_at DESC"
+        # Format created_at and modified_at to ISO 8601 like string in SQL
+        # modified_at is fetched but not currently included in the response.
+        query = ("SELECT id, text, "
+                 "DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%SZ') as created_at, "
+                 "DATE_FORMAT(modified_at, '%Y-%m-%dT%H:%i:%SZ') as modified_at "
+                 "FROM comments ORDER BY created_at DESC")
         cursor.execute(query)
-        comments = cursor.fetchall()
+        comments_details = cursor.fetchall()
+
+        # Filter out modified_at for the response
+        comments = [
+            {"id": c["id"], "text": c["text"], "created_at": c["created_at"]}
+            for c in comments_details
+        ]
         
         return jsonify(comments), 200
         
@@ -221,12 +241,22 @@ def get_comment(comment_id):
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        query = "SELECT id, text, DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%SZ') as created_at FROM comments WHERE id = %s"
+        # Fetch modified_at as well, though not currently returned in API response
+        query = ("SELECT id, text, "
+                 "DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%SZ') as created_at, "
+                 "DATE_FORMAT(modified_at, '%Y-%m-%dT%H:%i:%SZ') as modified_at "
+                 "FROM comments WHERE id = %s")
         cursor.execute(query, (comment_id,))
-        comment = cursor.fetchone()
+        comment_details = cursor.fetchone()
         
-        if comment:
-            return jsonify(comment), 200
+        if comment_details:
+            # Filter out modified_at for the response
+            response_comment = {
+                "id": comment_details["id"],
+                "text": comment_details["text"],
+                "created_at": comment_details["created_at"]
+            }
+            return jsonify(response_comment), 200
         else:
             return jsonify({"error": "Comment not found"}), 404
             
@@ -260,11 +290,21 @@ def update_comment(comment_id):
 
         cursor.close()
         cursor = conn.cursor(dictionary=True)
-        select_query = ("SELECT id, text, DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%SZ') "
-                        "as created_at FROM comments WHERE id = %s")
+        # Select modified_at as well, though not currently returned in API
+        select_query = ("SELECT id, text, "
+                        "DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%SZ') as created_at, "
+                        "DATE_FORMAT(modified_at, '%Y-%m-%dT%H:%i:%SZ') as modified_at "
+                        "FROM comments WHERE id = %s")
         cursor.execute(select_query, (comment_id,))
-        updated = cursor.fetchone()
-        return jsonify(updated), 200
+        updated_comment_details = cursor.fetchone()
+
+        # For the response, only include id, text, and created_at as before
+        response_comment = {
+            "id": updated_comment_details["id"],
+            "text": updated_comment_details["text"],
+            "created_at": updated_comment_details["created_at"]
+        }
+        return jsonify(response_comment), 200
 
     except mysql.connector.Error as err:
         print(f"Database error in update_comment: {err}")
